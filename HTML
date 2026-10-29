@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pemakaian Bahan Baku</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍗</text></svg>">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{--bg:#17110d;--card:#241a14;--card2:#2e2119;--ink:#fff4e6;--mute:#bba796;--line:#41301f;--gold:#ffb938;--org:#ff7a2f;--ok:#6fdc8c;--bad:#ff7b7b}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(1000px 480px at 85% -10%,#4d2b14 0%,transparent 60%),var(--bg);color:var(--ink);font:15px/1.5 Poppins,system-ui,"Segoe UI",Arial,sans-serif;min-height:100vh}
+.wrap{max-width:960px;margin:0 auto;padding:20px 16px 70px}
+header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.logo{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--org),var(--gold));display:grid;place-items:center;font-size:28px}
+h1{font-size:22px;margin:0;line-height:1.2}
+.sub{margin:0;color:var(--mute);font-size:13px}
+.badge{margin-left:auto;font-size:12px;padding:6px 12px;border-radius:99px;background:var(--card);border:1px solid var(--line);color:var(--mute)}
+.badge.ok{color:var(--ok)}.badge.bad{color:var(--bad)}
+.tabs{display:flex;gap:6px;margin-bottom:16px;background:var(--card);padding:6px;border-radius:99px;border:1px solid var(--line);width:fit-content}
+.tabs button{border:0;background:none;color:var(--mute);padding:9px 22px;border-radius:99px;font-weight:600}
+.tabs button[aria-selected=true]{background:linear-gradient(135deg,var(--org),var(--gold));color:#2a1405}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}
+h2{font-size:16px;margin:0 0 12px}
+.hint{font-size:13px;color:var(--mute)}
+input{font:inherit;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0}
+input:focus-visible,button:focus-visible,summary:focus-visible,.drop:focus-within{outline:2px solid var(--gold);outline-offset:2px}
+label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--mute)}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--ink);padding:9px 14px}
+button.pri{border:0;font-weight:700;color:#2a1405;background:linear-gradient(135deg,var(--org),var(--gold))}
+button.x{border:0;background:none;color:var(--bad)}
+button.lnk{border:0;background:none;color:var(--gold);text-decoration:underline;padding:2px 4px}
+.filters,.top{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 16px}
+.stat b{display:block;font-size:28px;line-height:1.2;color:var(--gold)}
+.stat span{font-size:12px;color:var(--mute)}
+.mat{display:grid;grid-template-columns:minmax(120px,1.2fr) 2fr auto;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+.mat:last-child{border:0}
+.bar{height:10px;background:var(--card2);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--org),var(--gold));border-radius:99px}
+.kg{text-align:right;font-weight:700;font-size:20px;color:var(--gold);min-width:90px}
+.kg small{display:block;color:var(--mute);font-weight:400;font-size:11px}
+@media(max-width:560px){.mat{grid-template-columns:1fr auto}.mat .bar{grid-column:1/-1;order:3}}
+table{border-collapse:collapse;width:100%}
+td,th{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:14px}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+th{color:var(--mute);font-weight:600;font-size:12px}
+.scroll{overflow-x:auto}
+details{border-top:1px solid var(--line);padding:8px 0}
+details.card{border:1px solid var(--line);padding:14px 18px}
+summary{cursor:pointer;display:flex;justify-content:space-between;gap:10px;font-weight:600}
+summary span{color:var(--mute);font-weight:400;font-size:13px}
+.warn{background:#3a2a10;border:1px solid var(--gold);border-radius:18px;padding:16px;margin-bottom:14px}
+.warn h2{color:var(--gold)}
+.drop{display:block;border:2px dashed var(--gold);border-radius:18px;padding:26px 16px;text-align:center;cursor:pointer;background:var(--card2);margin-bottom:6px}
+.row{display:flex;gap:8px;margin:6px 0;align-items:center;flex-wrap:wrap}
+.row input.in{flex:1;min-width:160px;max-width:320px}
+.row input[type=number]{width:100px}
+.row input[type=checkbox]{width:18px;height:18px;accent-color:var(--gold)}
+.perq{font-size:12px;color:var(--mute);min-width:130px}
+.top label:first-child{flex:1;min-width:200px}
+.bq,.pq{width:140px}
+.err{background:#3b1717;border:1px solid var(--bad);color:var(--ink);border-radius:18px;padding:14px;margin-bottom:14px}
+footer{margin-top:24px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🍗</div>
+    <div><h1>Pemakaian Bahan Baku</h1><p class="sub">Dari qty penjualan ke bahan baku yang seharusnya terpakai</p></div>
+    <div id="conn" class="badge">Belum tersambung</div>
+  </header>
+
+  <section id="setup" hidden>
+    <div class="card"><h2>Hubungkan ke spreadsheet</h2>
+      <p class="hint">Tempel link Apps Script (berakhiran /exec) hasil Deploy. Cukup sekali di perangkat ini.</p>
+      <label>Link Apps Script<input id="gasIn" type="url" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <div style="margin-top:12px"><button class="pri" id="gasGo" type="button">Hubungkan</button></div>
+    </div>
+  </section>
+
+  <section id="app" hidden>
+    <div id="err" class="err" hidden><b>Data belum bisa dimuat.</b> <span id="errMsg"></span><div class="hint" style="margin-top:6px">Cek link Apps Script dan pastikan Deploy diatur "Who has access: Anyone".</div></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t1" aria-selected="true" type="button">Pemakaian</button>
+      <button role="tab" id="t2" aria-selected="false" type="button">SOP</button>
+    </div>
+    <section id="p1">
+      <div class="card"><div class="filters">
+        <label>Dari tanggal<input id="from" type="date"></label>
+        <label>Sampai tanggal<input id="to" type="date"></label>
+        <button class="pri" id="reload" type="button">Muat ulang data</button>
+      </div></div>
+      <div id="usage"></div>
+    </section>
+    <section id="p2" hidden></section>
+    <footer><button class="lnk" id="resetGas" type="button">Ganti link Apps Script</button></footer>
+  </section>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 2) => new Intl.NumberFormat("id-ID", {maximumFractionDigits: d}).format(v);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const newId = () => "sop-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+function norm(s) {
+  s = String(s).toUpperCase().replace(/\s+/g, " ").trim();
+  while (/\sPPN$/.test(s)) s = s.replace(/\sPPN$/, "").trim();
+  return s;
+}
+
+const qs = new URLSearchParams(location.search);
+let GAS = qs.get("gas") || store.get("bb_gas", "");
+if (qs.get("gas")) store.set("bb_gas", GAS);
+let recipes = [], rows = [], draft = null, pdfMsg = "", loaded = false;
+
+function conn(t, c) { const e = $("conn"); e.textContent = t; e.className = "badge " + (c || ""); }
+function showApp() { $("setup").hidden = !!GAS; $("app").hidden = !GAS; }
+
+async function api(action) {
+  const d = await (await fetch(GAS + (GAS.includes("?") ? "&" : "?") + "action=" + action)).json();
+  if (!d.ok) throw new Error(d.error || "respon tidak valid");
+  return d;
+}
+async function post(body) {
+  const d = await (await fetch(GAS, {method: "POST", body: JSON.stringify(body)})).json();
+  if (!d.ok) throw new Error(d.error || "gagal menyimpan");
+}
+
+async function loadAll() {
+  if (!GAS) return;
+  conn("Memuat data…");
+  try {
+    const [a, b] = await Promise.all([api("sop"), api("sales")]);
+    recipes = a.sops; rows = b.rows.map(r => ({date: r[0], name: r[1], qty: r[2]}));
+    if (!rows.length) throw new Error("Tidak ada baris penjualan yang terbaca");
+    const ds = rows.map(r => r.date).sort();
+    if (!loaded) { $("from").value = ds[0]; $("to").value = ds[ds.length - 1]; loaded = true; }
+    conn("● Tersambung · " + fmt(rows.length, 0) + " baris penjualan", "ok");
+    $("err").hidden = true; renderUsage(); if (!$("p2").hidden) renderSOP();
+  } catch (e) { conn("Gagal tersambung", "bad"); $("err").hidden = false; $("errMsg").textContent = e.message; }
+}
+
+function findRecipe(key) {
+  let best = null;
+  for (const r of recipes) {
+    const rn = norm(r.name);
+    if (rn && (key === rn || key.startsWith(rn + " ")) && (!best || rn.length > norm(best.name).length)) best = r;
+  }
+  return best;
+}
+
+function renderUsage() {
+  const from = $("from").value, to = $("to").value, agg = new Map();
+  for (const r of rows) {
+    if ((from && r.date < from) || (to && r.date > to)) continue;
+    const k = norm(r.name), a = agg.get(k) || {label: k, qty: 0};
+    a.qty += r.qty; agg.set(k, a);
+  }
+  const totals = new Map(), matched = [], missing = [];
+  let qtySum = 0;
+  for (const [k, a] of agg) {
+    const rec = findRecipe(k);
+    if (!rec || !(+rec.batchQty > 0)) { missing.push(a); continue; }
+    const lines = rec.items.filter(i => i.n && +i.g > 0).map(i => ({n: i.n, g: a.qty * i.g / rec.batchQty}));
+    lines.forEach(l => totals.set(l.n, (totals.get(l.n) || 0) + l.g));
+    matched.push({name: rec.name, qty: a.qty, lines}); qtySum += a.qty;
+  }
+  matched.sort((a, b) => b.qty - a.qty); missing.sort((a, b) => b.qty - a.qty);
+  const list = [...totals].sort((a, b) => b[1] - a[1]), max = list.length ? list[0][1] : 1;
+
+  let h = `<div class="stats"><div class="stat"><b>${fmt(qtySum, 0)}</b><span>qty terjual yang punya SOP</span></div><div class="stat"><b>${matched.length}</b><span>item dihitung</span></div><div class="stat"><b>${missing.length}</b><span>item belum punya SOP</span></div></div>`;
+  h += `<div class="card"><h2>Bahan baku yang seharusnya terpakai</h2>` + (list.length
+    ? list.map(([n, g]) => `<div class="mat"><div>${esc(n)}</div><div class="bar"><i style="width:${Math.max(3, g / max * 100)}%"></i></div><div class="kg">${fmt(g / 1000)} kg<small>${fmt(g, 0)} gr</small></div></div>`).join("")
+    : `<div class="hint">Belum ada item penjualan yang cocok dengan SOP pada periode ini.</div>`) + `</div>`;
+  if (matched.length) h += `<div class="card"><h2>Rincian per item</h2>` + matched.map(m =>
+    `<details><summary>${esc(m.name)}<span>${fmt(m.qty)} qty</span></summary><div class="scroll"><table><thead><tr><th>Bahan</th><th class="n">Gram</th><th class="n">Kg</th></tr></thead><tbody>${m.lines.map(l => `<tr><td>${esc(l.n)}</td><td class="n">${fmt(l.g, 0)}</td><td class="n">${fmt(l.g / 1000)}</td></tr>`).join("")}</tbody></table></div></details>`).join("") + `</div>`;
+  if (missing.length) h += `<div class="warn"><h2>${missing.length} item terjual belum punya SOP</h2><div class="hint" style="margin-bottom:8px">Item ini belum ikut dihitung. Klik Buat SOP untuk menambahkannya.</div><div class="scroll"><table><tbody>${missing.slice(0, 60).map(a => `<tr><td>${esc(a.label)}</td><td class="n">${fmt(a.qty)} qty</td><td><button class="lnk" type="button" data-add="${esc(a.label)}">Buat SOP</button></td></tr>`).join("")}</tbody></table></div>${missing.length > 60 ? `<div class="hint">Menampilkan 60 item dengan qty terbesar.</div>` : ""}</div>`;
+  $("usage").innerHTML = h;
+}
+
+/* ---------- SOP ---------- */
+const perQty = (r, it) => (+r.batchQty > 0 ? (+it.g || 0) / +r.batchQty : null);
+const perQtyText = (r, it) => { const v = perQty(r, it); return v === null ? "isi qty per batch" : "= " + fmt(v) + " gr per qty"; };
+const rowHtml = (r, it, j) => `<div class="row" data-j="${j}"><input class="in" value="${esc(it.n)}" placeholder="Nama bahan" aria-label="Nama bahan" data-f="n"><input type="number" min="0" step="any" value="${it.g}" aria-label="Gram per batch" data-f="g"><span class="hint">gr</span><span class="perq">${perQtyText(r, it)}</span><button class="x" type="button" data-rm="${j}" aria-label="Hapus bahan">Hapus</button></div>`;
+
+async function readPDF(file) {
+  if (!window.pdfjsLib) throw new Error("library PDF belum termuat, periksa koneksi internet");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  const pdf = await pdfjsLib.getDocument({data: await file.arrayBuffer()}).promise, lines = [];
+  for (let p = 1; p <= pdf.numPages; p++) {
+    const tc = await (await pdf.getPage(p)).getTextContent();
+    const its = tc.items.filter(i => i.str.trim()).map(i => ({s: i.str.trim(), x: i.transform[4], y: i.transform[5]}));
+    its.sort((a, b) => b.y - a.y || a.x - b.x);
+    let cur = null;
+    for (const it of its) { if (cur && Math.abs(cur.y - it.y) <= 3) cur.t.push(it); else { cur = {y: it.y, t: [it]}; lines.push(cur); } }
+  }
+  return lines.map(l => l.t.sort((a, b) => a.x - b.x).map(i => i.s).join(" ").replace(/\s+/g, " "));
+}
+function parseSOP(lines) {
+  let name = "";
+  for (const l of lines) { const m = l.match(/item\s*name\s*:?\s*(.+)$/i); if (m) { name = m[1].trim(); break; } }
+  const rs = [];
+  for (const l of lines) {
+    const m = l.match(/^\d{1,2}\s+(.+?)\s+(\d+(?:[.,]\d+)?)\s*(kg|gr|g|ml|l)\b/i);
+    if (!m) continue;
+    let g = parseFloat(m[2].replace(",", ".")); const u = m[3].toLowerCase();
+    if (u === "kg" || u === "l") g *= 1000;
+    rs.push({n: m[1].trim(), g, on: true, note: ""});
+  }
+  rs.forEach((r, i) => {
+    let sum = 0;
+    for (let k = i + 1; k < rs.length; k++) {
+      sum += rs[k].g;
+      if (k >= i + 2 && Math.abs(sum - r.g) < 0.01) { r.on = false; r.note = "mirip total baris di bawahnya, tidak dihitung"; break; }
+      if (sum > r.g) break;
+    }
+  });
+  return {name, rows: rs};
+}
+
+function draftHtml() {
+  if (!draft) return "";
+  const d = draft;
+  return `<div class="card"><h2>Cek hasil baca: ${esc(d.file)}</h2>
+  <div class="hint">Centang bahan yang ikut dihitung. Bahan dengan nama sama dijumlahkan, jadi ubah namanya jika ingin dipisah (misal tepung breading dan tepung batter).</div>
+  <div class="top draft" style="margin-top:10px"><label>Nama item (sama seperti di sheet penjualan)<input data-d="name" value="${esc(d.name)}"></label>
+  <label>Berat bahan utama per 1 qty (gr)<input class="pq" type="number" min="0" step="any" data-d="perQty" value="${d.perQty}" placeholder="contoh 200"></label>
+  <label>1 batch = berapa qty<input class="bq" type="number" min="0" step="any" data-d="batchQty" value="${d.batchQty}"></label></div>
+  <div class="hint" style="margin:4px 0 8px">Isi salah satu. Bahan utama adalah bahan tercentang paling atas.</div>
+  <div class="draft">${d.rows.map((r, j) => `<div class="row" data-dj="${j}"><input type="checkbox" data-d="on" ${r.on ? "checked" : ""} aria-label="Ikut dihitung"><input class="in" value="${esc(r.n)}" data-d="n" aria-label="Nama bahan"><input type="number" min="0" step="any" value="${r.g}" data-d="g" aria-label="Gram per batch"><span class="hint">gr ${esc(r.note)}</span></div>`).join("")}</div>
+  <div style="display:flex;gap:8px;margin-top:12px"><button class="pri" type="button" id="saveDraft">Simpan SOP</button><button type="button" id="cancelDraft">Batal</button></div></div>`;
+}
+
+function renderSOP() {
+  let h = `<label class="drop"><input type="file" id="pdf" accept="application/pdf" hidden><div style="font-size:34px">📄</div><b style="color:var(--ink);font-size:15px">Upload PDF SOP baru</b><div class="hint">Bahan dan gram dibaca otomatis, Anda tinggal cek lalu simpan</div></label><div id="pdfMsg" class="hint" style="margin:0 2px 12px">${esc(pdfMsg)}</div>` + draftHtml();
+  h += `<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px"><h2 style="margin:0">Daftar SOP (${recipes.length})</h2><button type="button" id="addRec">+ Isi manual</button></div>`;
+  h += recipes.length ? recipes.map((r, i) => `<details class="card rec" data-i="${i}" ${r.name ? "" : "open"}>
+    <summary>${esc(r.name) || "SOP baru"}<span>1 batch = ${esc(r.batchQty)} qty</span></summary>
+    <div class="top" style="margin-top:10px"><label>Nama item (sama seperti di sheet)<input value="${esc(r.name)}" data-f="name" placeholder="Contoh: FRIED CHICKEN"></label>
+    <label>1 batch = berapa qty<input class="bq" type="number" min="0" step="any" value="${r.batchQty}" data-f="batchQty"></label></div>
+    <div class="hint" style="margin-top:8px">Bahan baku untuk 1 batch</div>
+    ${r.items.map((it, j) => rowHtml(r, it, j)).join("")}
+    <div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-addi="1">+ Bahan</button><button class="x" type="button" data-delrec="1">Hapus SOP</button></div>
+  </details>`).join("") : `<div class="card hint">Belum ada SOP. Upload PDF di atas atau isi manual.</div>`;
+  $("p2").innerHTML = h;
+}
+
+const timers = {};
+function queueSave(r) {
+  if (!r.name.trim()) return;
+  clearTimeout(timers[r.id]); conn("Menyimpan ke spreadsheet…");
+  timers[r.id] = setTimeout(async () => {
+    try {
+      await post({action: "save", id: r.id, name: r.name.trim(), batchQty: +r.batchQty || 0, items: r.items.filter(i => i.n.trim() && +i.g > 0).map(i => ({n: i.n.trim(), g: +i.g}))});
+      conn("● Tersimpan di spreadsheet", "ok"); renderUsage();
+    } catch (e) { conn("Gagal menyimpan: " + e.message, "bad"); }
+  }, 1200);
+}
+async function dropSOP(id) { try { await post({action: "delete", id}); conn("● Terhapus dari spreadsheet", "ok"); } catch (e) { conn("Gagal menghapus: " + e.message, "bad"); } }
+
+function saveDraft() {
+  const d = draft, items = d.rows.filter(r => r.on && r.n.trim() && r.g > 0).map(r => ({n: r.n.trim(), g: r.g}));
+  if (!d.name.trim()) return alert("Isi nama item.");
+  if (!(+d.batchQty > 0)) return alert("Isi berat bahan utama per 1 qty atau jumlah qty per batch.");
+  if (!items.length) return alert("Pilih minimal satu bahan.");
+  const old = recipes.find(r => norm(r.name) === norm(d.name));
+  if (old && !confirm("SOP untuk item ini sudah ada. Timpa dengan hasil baca PDF?")) return;
+  const sop = {id: old ? old.id : newId(), name: d.name.trim().toUpperCase(), batchQty: +d.batchQty, items};
+  recipes = recipes.filter(r => r !== old); recipes.unshift(sop);
+  queueSave(sop); draft = null; pdfMsg = "SOP " + sop.name + " disimpan."; renderSOP(); renderUsage();
+}
+function focusFirst() { const el = $("p2").querySelector(".rec input"); if (el) { el.scrollIntoView({behavior: "smooth", block: "center"}); el.focus(); } }
+
+$("p2").addEventListener("input", e => {
+  const el = e.target, box = el.closest(".draft");
+  if (el.dataset.d) {
+    const f = el.dataset.d, d = draft, top = $("p2").querySelector(".top.draft");
+    if (f === "name") d.name = el.value;
+    else if (f === "perQty") d.perQty = el.value;
+    else if (f === "batchQty") { d.batchQty = el.value; d.perQty = ""; top.querySelector(".pq").value = ""; }
+    else { const r = d.rows[+el.closest(".row").dataset.dj]; if (f === "on") r.on = el.checked; else if (f === "g") r.g = parseFloat(el.value) || 0; else r.n = el.value; }
+    const main = d.rows.find(r => r.on && r.g > 0);
+    if (+d.perQty > 0 && main) { d.batchQty = +(main.g / d.perQty).toFixed(4); top.querySelector(".bq").value = d.batchQty; }
+    return;
+  }
+  const card = el.closest(".rec"); if (!card || !el.dataset.f) return;
+  const r = recipes[+card.dataset.i], f = el.dataset.f;
+  if (f === "name") r.name = el.value;
+  else if (f === "batchQty") r.batchQty = parseFloat(el.value) || 0;
+  else { const it = r.items[+el.closest(".row").dataset.j]; if (f === "g") it.g = parseFloat(el.value) || 0; else it.n = el.value; }
+  card.querySelectorAll(".row").forEach(row => { row.querySelector(".perq").textContent = perQtyText(r, r.items[+row.dataset.j]); });
+  queueSave(r);
+});
+$("p2").addEventListener("change", async e => {
+  if (e.target.id !== "pdf" || !e.target.files[0]) return;
+  const f = e.target.files[0]; $("pdfMsg").textContent = "Membaca PDF…";
+  try {
+    const {name, rows: rs} = parseSOP(await readPDF(f));
+    if (!rs.length) { pdfMsg = "Daftar bahan (nomor, nama, gram) tidak terbaca. Pastikan PDF berisi teks, bukan hasil scan."; draft = null; }
+    else { draft = {file: f.name, name, perQty: "", batchQty: "", rows: rs}; pdfMsg = ""; }
+  } catch (err) { pdfMsg = "Gagal membaca PDF: " + err.message; draft = null; }
+  renderSOP();
+});
+$("p2").addEventListener("click", e => {
+  const t = e.target, card = t.closest(".rec");
+  if (t.id === "cancelDraft") { draft = null; renderSOP(); return; }
+  if (t.id === "saveDraft") { saveDraft(); return; }
+  if (t.id === "addRec") { recipes.unshift({id: newId(), name: "", batchQty: 1, items: [{n: "", g: 0}]}); renderSOP(); focusFirst(); return; }
+  if (card && t.dataset.addi) { const r = recipes[+card.dataset.i]; r.items.push({n: "", g: 0}); queueSave(r); }
+  else if (card && t.dataset.rm !== undefined) { const r = recipes[+card.dataset.i]; r.items.splice(+t.dataset.rm, 1); queueSave(r); }
+  else if (card && t.dataset.delrec) { if (!confirm("Hapus SOP ini?")) return; dropSOP(recipes[+card.dataset.i].id); recipes.splice(+card.dataset.i, 1); }
+  else return;
+  renderSOP(); renderUsage();
+});
+$("usage").addEventListener("click", e => {
+  const n = e.target.dataset.add; if (!n) return;
+  recipes.unshift({id: newId(), name: n, batchQty: 1, items: [{n: "", g: 0}]}); showTab(2); focusFirst();
+});
+
+function showTab(n) {
+  $("t1").setAttribute("aria-selected", n === 1); $("t2").setAttribute("aria-selected", n === 2);
+  $("p1").hidden = n !== 1; $("p2").hidden = n !== 2;
+  if (n === 1) renderUsage(); else renderSOP();
+}
+$("t1").onclick = () => showTab(1);
+$("t2").onclick = () => showTab(2);
+$("reload").onclick = loadAll;
+$("from").onchange = $("to").onchange = renderUsage;
+$("gasGo").onclick = () => {
+  const v = $("gasIn").value.trim();
+  if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(v)) { alert("Link harus diawali https://script.google.com dan berakhiran /exec"); return; }
+  GAS = v; store.set("bb_gas", v); showApp(); loadAll();
+};
+$("resetGas").onclick = () => { if (confirm("Ganti link Apps Script?")) { GAS = ""; store.set("bb_gas", ""); conn("Belum tersambung"); showApp(); } };
+
+showApp(); loadAll();
+</script>
+</body>
+</html>
