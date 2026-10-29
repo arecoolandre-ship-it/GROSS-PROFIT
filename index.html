@@ -64,6 +64,10 @@ summary span{color:var(--mute);font-weight:400;font-size:13px}
 .bq,.pq{width:140px}
 .err{background:#3b1717;border:1px solid var(--bad);color:var(--ink);border-radius:18px;padding:14px;margin-bottom:14px}
 footer{margin-top:24px;text-align:center}
+button:disabled{opacity:.45;cursor:not-allowed}
+.pick{display:inline-block;padding:10px 16px;border-radius:10px;background:var(--card2);border:1px dashed var(--gold);cursor:pointer;font-weight:600}
+.pick:focus-within{outline:2px solid var(--gold);outline-offset:2px}
+select{font:inherit;color:var(--ink);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:6px;max-width:170px}
 </style>
 </head>
 <body>
@@ -94,6 +98,9 @@ footer{margin-top:24px;text-align:center}
         <label>Sampai tanggal<input id="to" type="date"></label>
         <button class="pri" id="reload" type="button">Muat ulang data</button>
       </div></div>
+      <div class="card"><h2>Cari item penjualan</h2>
+        <input id="q" placeholder="Ketik sebagian nama item, misal: strip" style="width:100%" aria-label="Cari item penjualan">
+        <div id="found" style="margin-top:10px"></div></div>
       <div id="usage"></div>
     </section>
     <section id="p2" hidden></section>
@@ -119,7 +126,7 @@ function norm(s) {
 const qs = new URLSearchParams(location.search);
 let GAS = qs.get("gas") || store.get("bb_gas", "");
 if (qs.get("gas")) store.set("bb_gas", GAS);
-let recipes = [], rows = [], draft = null, pdfMsg = "", loaded = false;
+let recipes = [], rows = [], draft = null, pdfMsg = "", pdfFile = null, loaded = false, lastAgg = new Map();
 
 function conn(t, c) { const e = $("conn"); e.textContent = t; e.className = "badge " + (c || ""); }
 function showApp() { $("setup").hidden = !!GAS; $("app").hidden = !GAS; }
@@ -149,10 +156,12 @@ async function loadAll() {
 }
 
 function findRecipe(key) {
-  let best = null;
+  let best = null, bl = 0;
   for (const r of recipes) {
-    const rn = norm(r.name);
-    if (rn && (key === rn || key.startsWith(rn + " ")) && (!best || rn.length > norm(best.name).length)) best = r;
+    for (const nm of [r.name, ...String(r.alias || "").split(",")]) {
+      const rn = norm(nm);
+      if (rn && (key === rn || key.startsWith(rn + " ")) && rn.length > bl) { best = r; bl = rn.length; }
+    }
   }
   return best;
 }
@@ -164,6 +173,7 @@ function renderUsage() {
     const k = norm(r.name), a = agg.get(k) || {label: k, qty: 0};
     a.qty += r.qty; agg.set(k, a);
   }
+  lastAgg = agg;
   const totals = new Map(), matched = [], missing = [];
   let qtySum = 0;
   for (const [k, a] of agg) {
@@ -183,8 +193,23 @@ function renderUsage() {
   if (matched.length) h += `<div class="card"><h2>Rincian per item</h2>` + matched.map(m =>
     `<details><summary>${esc(m.name)}<span>${fmt(m.qty)} qty</span></summary><div class="scroll"><table><thead><tr><th>Bahan</th><th class="n">Gram</th><th class="n">Kg</th></tr></thead><tbody>${m.lines.map(l => `<tr><td>${esc(l.n)}</td><td class="n">${fmt(l.g, 0)}</td><td class="n">${fmt(l.g / 1000)}</td></tr>`).join("")}</tbody></table></div></details>`).join("") + `</div>`;
   if (missing.length) h += `<div class="warn"><h2>${missing.length} item terjual belum punya SOP</h2><div class="hint" style="margin-bottom:8px">Item ini belum ikut dihitung. Klik Buat SOP untuk menambahkannya.</div><div class="scroll"><table><tbody>${missing.slice(0, 60).map(a => `<tr><td>${esc(a.label)}</td><td class="n">${fmt(a.qty)} qty</td><td><button class="lnk" type="button" data-add="${esc(a.label)}">Buat SOP</button></td></tr>`).join("")}</tbody></table></div>${missing.length > 60 ? `<div class="hint">Menampilkan 60 item dengan qty terbesar.</div>` : ""}</div>`;
-  $("usage").innerHTML = h;
+  $("usage").innerHTML = h; renderFound();
 }
+
+function renderFound() {
+  const q = norm($("q").value);
+  if (!q) { $("found").innerHTML = '<div class="hint">Ketik sebagian nama item untuk mencari di seluruh data penjualan pada periode tanggal di atas.</div>'; return; }
+  const hits = [...lastAgg.values()].filter(a => a.label.includes(q)).sort((a, b) => b.qty - a.qty);
+  const opts = recipes.map((r, i) => `<option value="${i}">${esc(r.name || "SOP baru")}</option>`).join("");
+  $("found").innerHTML = hits.length
+    ? `<div class="scroll"><table><tbody>` + hits.slice(0, 30).map(a => {
+        const rec = findRecipe(a.label);
+        return `<tr><td>${esc(a.label)}</td><td class="n">${fmt(a.qty)} qty</td><td>${rec ? "✓ pakai SOP " + esc(rec.name)
+          : (recipes.length ? `<select aria-label="Pilih SOP">${opts}</select> <button class="lnk" type="button" data-link="${esc(a.label)}">Tautkan</button> ` : "") + `<button class="lnk" type="button" data-add="${esc(a.label)}">Buat SOP baru</button>`}</td></tr>`;
+      }).join("") + `</tbody></table></div>${hits.length > 30 ? '<div class="hint">Menampilkan 30 hasil pertama.</div>' : ""}`
+    : '<div class="hint">Tidak ada item yang cocok pada periode ini. Coba ubah kata kunci atau perluas tanggal.</div>';
+}
+function newSop(n) { recipes.unshift({id: newId(), name: n, alias: "", batchQty: 1, items: [{n: "", g: 0}]}); showTab(2); focusFirst(); }
 
 /* ---------- SOP ---------- */
 const perQty = (r, it) => (+r.batchQty > 0 ? (+it.g || 0) / +r.batchQty : null);
@@ -240,12 +265,16 @@ function draftHtml() {
 }
 
 function renderSOP() {
-  let h = `<label class="drop"><input type="file" id="pdf" accept="application/pdf" hidden><div style="font-size:34px">📄</div><b style="color:var(--ink);font-size:15px">Upload PDF SOP baru</b><div class="hint">Bahan dan gram dibaca otomatis, Anda tinggal cek lalu simpan</div></label><div id="pdfMsg" class="hint" style="margin:0 2px 12px">${esc(pdfMsg)}</div>` + draftHtml();
+  let h = `<div class="card"><h2>Tambah SOP dari PDF</h2><div class="hint" style="margin-bottom:10px">Langkah 1: pilih file PDF. Langkah 2: klik Upload dan baca SOP.</div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><label class="pick" style="flex-direction:row">📄 Pilih file PDF<input type="file" id="pdf" accept="application/pdf" hidden></label><span class="hint">${pdfFile ? "File dipilih: " + esc(pdfFile.name) : "Belum ada file dipilih"}</span></div>
+    <div style="margin-top:12px"><button class="pri" type="button" id="doUpload" ${pdfFile ? "" : "disabled"}>Upload dan baca SOP</button></div>
+    <div id="pdfMsg" class="hint" style="margin-top:8px">${esc(pdfMsg)}</div></div>` + draftHtml();
   h += `<div style="display:flex;justify-content:space-between;align-items:center;margin:18px 2px 10px"><h2 style="margin:0">Daftar SOP (${recipes.length})</h2><button type="button" id="addRec">+ Isi manual</button></div>`;
   h += recipes.length ? recipes.map((r, i) => `<details class="card rec" data-i="${i}" ${r.name ? "" : "open"}>
     <summary>${esc(r.name) || "SOP baru"}<span>1 batch = ${esc(r.batchQty)} qty</span></summary>
     <div class="top" style="margin-top:10px"><label>Nama item (sama seperti di sheet)<input value="${esc(r.name)}" data-f="name" placeholder="Contoh: FRIED CHICKEN"></label>
     <label>1 batch = berapa qty<input class="bq" type="number" min="0" step="any" value="${r.batchQty}" data-f="batchQty"></label></div>
+    <label style="margin-top:8px">Nama lain di sheet penjualan (pisahkan koma, boleh kosong)<input value="${esc(r.alias || "")}" data-f="alias" placeholder="Contoh: ANK CHICKEN STRIPS"></label>
     <div class="hint" style="margin-top:8px">Bahan baku untuk 1 batch</div>
     ${r.items.map((it, j) => rowHtml(r, it, j)).join("")}
     <div style="display:flex;gap:8px;margin-top:8px"><button type="button" data-addi="1">+ Bahan</button><button class="x" type="button" data-delrec="1">Hapus SOP</button></div>
@@ -259,7 +288,7 @@ function queueSave(r) {
   clearTimeout(timers[r.id]); conn("Menyimpan ke spreadsheet…");
   timers[r.id] = setTimeout(async () => {
     try {
-      await post({action: "save", id: r.id, name: r.name.trim(), batchQty: +r.batchQty || 0, items: r.items.filter(i => i.n.trim() && +i.g > 0).map(i => ({n: i.n.trim(), g: +i.g}))});
+      await post({action: "save", id: r.id, name: r.name.trim(), alias: (r.alias || "").trim(), batchQty: +r.batchQty || 0, items: r.items.filter(i => i.n.trim() && +i.g > 0).map(i => ({n: i.n.trim(), g: +i.g}))});
       conn("● Tersimpan di spreadsheet", "ok"); renderUsage();
     } catch (e) { conn("Gagal menyimpan: " + e.message, "bad"); }
   }, 1200);
@@ -294,6 +323,44 @@ $("p2").addEventListener("input", e => {
   const card = el.closest(".rec"); if (!card || !el.dataset.f) return;
   const r = recipes[+card.dataset.i], f = el.dataset.f;
   if (f === "name") r.name = el.value;
+  else if (f === "alias") r.alias = el.value;
+  else if (f === "batchQty") r.batchQty = parseFloat(el.value) || 0;
+  else { const it = r.items[+el.closest(".row").dataset.j]; if (f === "g") it.g = parseFloat(el.value) || 0; else it.n = el.value; }
+  card.querySelectorAll(".row").forEach(row => { row.querySelector(".perq").textContent = perQtyText(r, r.items[+row.dataset.j]); });
+  queueSave(r);
+});
+$("p2").addEventListener("change", e => {
+  if (e.target.id !== "pdf") return;
+  pdfFile = e.target.files[0] || null; pdfMsg = ""; renderSOP();
+});
+async function runUpload() {
+  if (!pdfFile) return;
+  $("pdfMsg").textContent = "Membaca PDF…"; $("doUpload").disabled = true;
+  try {
+    const {name, rows: rs} = parseSOP(await readPDF(pdfFile));
+    if (!rs.length) { pdfMsg = "Daftar bahan (nomor, nama, gram) tidak terbaca. Pastikan PDF berisi teks, bukan hasil scan."; draft = null; }
+    else { draft = {file: pdfFile.name, name, perQty: "", batchQty: "", rows: rs}; pdfMsg = ""; pdfFile = null; }
+  } catch (err) { pdfMsg = "Gagal membaca PDF: " + err.message; draft = null; }
+  renderSOP();
+}
+function focusFirst() { const el = $("p2").querySelector(".rec input"); if (el) { el.scrollIntoView({behavior: "smooth", block: "center"}); el.focus(); } }
+
+$("p2").addEventListener("input", e => {
+  const el = e.target, box = el.closest(".draft");
+  if (el.dataset.d) {
+    const f = el.dataset.d, d = draft, top = $("p2").querySelector(".top.draft");
+    if (f === "name") d.name = el.value;
+    else if (f === "perQty") d.perQty = el.value;
+    else if (f === "batchQty") { d.batchQty = el.value; d.perQty = ""; top.querySelector(".pq").value = ""; }
+    else { const r = d.rows[+el.closest(".row").dataset.dj]; if (f === "on") r.on = el.checked; else if (f === "g") r.g = parseFloat(el.value) || 0; else r.n = el.value; }
+    const main = d.rows.find(r => r.on && r.g > 0);
+    if (+d.perQty > 0 && main) { d.batchQty = +(main.g / d.perQty).toFixed(4); top.querySelector(".bq").value = d.batchQty; }
+    return;
+  }
+  const card = el.closest(".rec"); if (!card || !el.dataset.f) return;
+  const r = recipes[+card.dataset.i], f = el.dataset.f;
+  if (f === "name") r.name = el.value;
+  else if (f === "alias") r.alias = el.value;
   else if (f === "batchQty") r.batchQty = parseFloat(el.value) || 0;
   else { const it = r.items[+el.closest(".row").dataset.j]; if (f === "g") it.g = parseFloat(el.value) || 0; else it.n = el.value; }
   card.querySelectorAll(".row").forEach(row => { row.querySelector(".perq").textContent = perQtyText(r, r.items[+row.dataset.j]); });
@@ -313,16 +380,23 @@ $("p2").addEventListener("click", e => {
   const t = e.target, card = t.closest(".rec");
   if (t.id === "cancelDraft") { draft = null; renderSOP(); return; }
   if (t.id === "saveDraft") { saveDraft(); return; }
-  if (t.id === "addRec") { recipes.unshift({id: newId(), name: "", batchQty: 1, items: [{n: "", g: 0}]}); renderSOP(); focusFirst(); return; }
+  if (t.id === "doUpload") { runUpload(); return; }
+  if (t.id === "addRec") { recipes.unshift({id: newId(), name: "", alias: "", batchQty: 1, items: [{n: "", g: 0}]}); renderSOP(); focusFirst(); return; }
   if (card && t.dataset.addi) { const r = recipes[+card.dataset.i]; r.items.push({n: "", g: 0}); queueSave(r); }
   else if (card && t.dataset.rm !== undefined) { const r = recipes[+card.dataset.i]; r.items.splice(+t.dataset.rm, 1); queueSave(r); }
   else if (card && t.dataset.delrec) { if (!confirm("Hapus SOP ini?")) return; dropSOP(recipes[+card.dataset.i].id); recipes.splice(+card.dataset.i, 1); }
   else return;
   renderSOP(); renderUsage();
 });
-$("usage").addEventListener("click", e => {
-  const n = e.target.dataset.add; if (!n) return;
-  recipes.unshift({id: newId(), name: n, batchQty: 1, items: [{n: "", g: 0}]}); showTab(2); focusFirst();
+$("usage").addEventListener("click", e => { const n = e.target.dataset.add; if (n) newSop(n); });
+$("q").addEventListener("input", renderFound);
+$("found").addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.add) { newSop(t.dataset.add); return; }
+  if (t.dataset.link) {
+    const r = recipes[+t.closest("td").querySelector("select").value];
+    r.alias = (r.alias ? r.alias + ", " : "") + t.dataset.link; queueSave(r); renderUsage();
+  }
 });
 
 function showTab(n) {
